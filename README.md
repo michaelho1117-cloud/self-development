@@ -43,6 +43,8 @@ Open **http://127.0.0.1:5173**. Details: [`sidecar/README.md`](./sidecar/README.
 
 Smoke: open `templates/concept-card.md` → inspire chat → edit/save in the Feynman tab.
 
+**Tutor LLM (optional):** without keys the center pane streams a Mode-aware stub. For live tokens, export `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL` for Netlify AI Gateway / OpenAI-compatible), or `ANTHROPIC_API_KEY`, or `MYTUTOR_LLM_*` — see [`sidecar/README.md`](./sidecar/README.md).
+
 ## How AGENT.md works
 
 | File | Role |

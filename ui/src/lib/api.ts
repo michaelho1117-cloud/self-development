@@ -63,14 +63,27 @@ export async function putFile(path: string, content: string): Promise<FilePayloa
 
 export type ChatMessage = { role: string; content: string }
 
+export type TutorSseEvent = {
+  type: string
+  text?: string
+  mode?: string
+  agent_md?: boolean
+  llm?: 'live' | 'placeholder' | string
+  provider?: string | null
+  model?: string
+  source?: string
+  message?: string
+  system_chars?: number
+}
+
 export async function* streamTutorChat(
   mode: TutorMode,
   messages: ChatMessage[],
   pins: unknown[] = [],
-): AsyncGenerator<{ type: string; text?: string; mode?: string; agent_md?: boolean }> {
+): AsyncGenerator<TutorSseEvent> {
   const res = await fetch(`${SIDECAR_BASE}/tutor/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
     body: JSON.stringify({ mode, messages, pins }),
   })
   if (!res.ok || !res.body) {
@@ -83,18 +96,20 @@ export async function* streamTutorChat(
     const { done, value } = await reader.read()
     if (done) break
     buffer += decoder.decode(value, { stream: true })
-    const parts = buffer.split('\n\n')
+    // SSE events are separated by a blank line; tolerate \r\n.
+    const parts = buffer.split(/\r?\n\r?\n/)
     buffer = parts.pop() ?? ''
     for (const part of parts) {
-      const line = part
-        .split('\n')
-        .find((l) => l.startsWith('data: '))
-      if (!line) continue
-      const raw = line.slice(6)
+      const dataLines = part
+        .split(/\r?\n/)
+        .filter((l) => l.startsWith('data:'))
+        .map((l) => l.replace(/^data:\s?/, ''))
+      if (dataLines.length === 0) continue
+      const raw = dataLines.join('\n')
       try {
-        yield JSON.parse(raw)
+        yield JSON.parse(raw) as TutorSseEvent
       } catch {
-        /* ignore malformed */
+        /* ignore malformed chunk */
       }
     }
   }
