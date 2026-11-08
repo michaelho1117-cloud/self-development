@@ -10,7 +10,7 @@ Status: seeded scaffold only. Check items off when mastered **via lab verificati
 - [ ] データ構造（配列, リスト, スタック, キュー, 木, グラフ）
   - [x] 配列 / リスト / スタック / キュー → `01_concepts/fe-data-structures-basics.md` + lab
   - [ ] 木 / グラフ
-- [ ] アルゴリズム（探索, 整列, 計算量の見積もり）
+- [x] アルゴリズム（探索, 整列, 計算量の見積もり）→ `01_concepts/fe-algorithms-complexity.md` + lab
 
 ### コンピュータシステム
 - [ ] ハードウェア（CPU, メモリ, 入出力）
