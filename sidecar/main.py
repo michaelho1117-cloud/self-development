@@ -52,11 +52,22 @@ class LabRunBody(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, Any]:
+    llm = tutor_engine.resolve_llm_config()
     return {
         "ok": True,
         "service": "mytutor-sidecar",
         "workspace": str(fs_manager.workspace_root()),
         "agent_md": tutor_engine.agent_md_exists(),
+        "llm": (
+            {
+                "configured": True,
+                "provider": llm.provider,
+                "model": llm.model,
+                "source": llm.source,
+            }
+            if llm
+            else {"configured": False, "provider": None, "model": None, "source": None}
+        ),
     }
 
 
