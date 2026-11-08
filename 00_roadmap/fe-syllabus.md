@@ -8,6 +8,8 @@ Status: seeded scaffold only. Check items off when mastered **via lab verificati
 - [ ] 離散数学・応用数学の基礎（論理, 集合, 確率）
 - [ ] 情報に関する理論（符号化, 情報量の直感）
 - [ ] データ構造（配列, リスト, スタック, キュー, 木, グラフ）
+  - [x] 配列 / リスト / スタック / キュー → `01_concepts/fe-data-structures-basics.md` + lab
+  - [ ] 木 / グラフ
 - [ ] アルゴリズム（探索, 整列, 計算量の見積もり）
 
 ### コンピュータシステム
