@@ -27,7 +27,7 @@ Health check: `curl http://127.0.0.1:8420/health`
 | `PUT` | `/fs/file` | Write `.md`/source (safe join, no escape) |
 | `GET` | `/fs/events` | SSE stub (Watchdog later) |
 | `POST` | `/tutor/chat` | Mode-aware SSE; injects `AGENT.md` + streams LLM tokens |
-| `POST` | `/labs/run` | **P1 stub** — returns `not_implemented` |
+| `POST` | `/labs/run` | `{path, runtime: py\|node}` → `{stdout,stderr,exit_code}`; only under `02_labs/`; timeout kill (~15s, max 30s) |
 | `GET/PUT` | `/sessions…` | Optional SQLite stub |
 
 CORS allows local Vite (`http://127.0.0.1:5173`, `localhost:5173`).
@@ -122,5 +122,5 @@ On provider failure after keys were found, a `token` error note is streamed plus
 
 - Listen address is hardcoded to `127.0.0.1`.
 - Paths are resolved under the workspace and checked against a whitelist; `..` escapes are rejected.
-- Lab execution is intentionally stubbed until P1 sandbox work.
+- Lab execution is restricted to files under `02_labs/`, uses argv lists (`shell=False`), and kills on timeout.
 - Do not log API key values.

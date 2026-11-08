@@ -124,8 +124,18 @@ async def tutor_chat(body: TutorChatBody) -> StreamingResponse:
 
 @app.post("/labs/run")
 async def labs_run(body: LabRunBody) -> dict[str, Any]:
-    # P1 stub — always returns not_implemented with clear TODO.
-    return await lab_runner.run_lab(body.path, body.runtime)
+    """Run a file under 02_labs/ via py|node; timeout kills the subprocess."""
+    try:
+        return await lab_runner.run_lab(body.path, body.runtime)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=404, detail={"error": f"not found: {exc}"}
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={"error": str(exc)}) from exc
+    except OSError as exc:
+        log.exception("lab run failed")
+        raise HTTPException(status_code=500, detail={"error": str(exc)}) from exc
 
 
 @app.get("/sessions")
