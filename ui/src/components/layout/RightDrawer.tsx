@@ -1,5 +1,25 @@
-import { putFile } from '../../lib/api'
+import { useEffect, useState } from 'react'
+import { putFile, runLab, type LabRuntime, type LabRunResult } from '../../lib/api'
 import { useWorkbench } from '../../stores/workbench'
+
+function isUnderLabs(path: string | null): boolean {
+  if (!path) return false
+  const norm = path.replace(/\\/g, '/')
+  return norm === '02_labs' || norm.startsWith('02_labs/')
+}
+
+function inferRuntime(path: string | null): LabRuntime {
+  if (!path) return 'py'
+  const lower = path.replace(/\\/g, '/').toLowerCase()
+  if (/\.(js|mjs|cjs)$/.test(lower)) return 'node'
+  return 'py'
+}
+
+function isRunnableLab(path: string | null): boolean {
+  if (!isUnderLabs(path) || !path) return false
+  const lower = path.replace(/\\/g, '/').toLowerCase()
+  return /\.(py|js|mjs|cjs)$/.test(lower)
+}
 
 export function RightDrawer() {
   const tab = useWorkbench((s) => s.drawerTab)
@@ -10,10 +30,39 @@ export function RightDrawer() {
   const fileDirty = useWorkbench((s) => s.fileDirty)
   const setPath = useWorkbench((s) => s.setPath)
 
+  const [runtime, setRuntime] = useState<LabRuntime>('py')
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<LabRunResult | null>(null)
+  const [runError, setRunError] = useState<string | null>(null)
+
+  const underLabs = isUnderLabs(currentPath)
+  const canRun = isRunnableLab(currentPath)
+
+  useEffect(() => {
+    setRuntime(inferRuntime(currentPath))
+    setResult(null)
+    setRunError(null)
+  }, [currentPath])
+
   async function save() {
     if (!currentPath) return
     const saved = await putFile(currentPath, fileContent)
     setFileContent(saved.content, false)
+  }
+
+  async function onRun() {
+    if (!currentPath || !canRun) return
+    setRunning(true)
+    setRunError(null)
+    try {
+      const out = await runLab(currentPath, runtime)
+      setResult(out)
+    } catch (err) {
+      setResult(null)
+      setRunError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRunning(false)
+    }
   }
 
   return (
@@ -73,25 +122,81 @@ export function RightDrawer() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 text-sm">
-          <p className="text-[var(--text-muted)]">
-            Lab runner is a <strong className="text-[var(--text)]">P1 stub</strong>.
-            Use <code>02_labs/</code> notes for now; sidecar{' '}
-            <code>POST /labs/run</code> returns <code>not_implemented</code>.
-          </p>
-          <pre className="overflow-auto rounded border border-[var(--border)] bg-[var(--bg)] p-3 text-xs text-[var(--text-muted)]">
-            {`TODO(P1): wire lab_runner subprocess
-- path under 02_labs/
-- runtime: py | node
-- timeout + stdout/stderr`}
-          </pre>
-          <button
-            type="button"
-            disabled
-            className="self-start rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] opacity-60"
-            title="Available in Phase 2 / Spec P1"
-          >
-            Run lab (coming soon)
-          </button>
+          <div className="space-y-1">
+            <p className="truncate text-xs text-[var(--text-muted)]">
+              {currentPath ?? 'Open a lab file under 02_labs/'}
+            </p>
+            {!underLabs && currentPath ? (
+              <p className="text-xs text-[var(--text-muted)]">
+                Run is limited to files under <code>02_labs/</code>.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+              Runtime
+              <select
+                value={runtime}
+                onChange={(e) => setRuntime(e.target.value as LabRuntime)}
+                disabled={!canRun || running}
+                className="rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs text-[var(--text)]"
+              >
+                <option value="py">py</option>
+                <option value="node">node</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              disabled={!canRun || running}
+              onClick={() => void onRun()}
+              className="rounded bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+              title={
+                canRun
+                  ? 'POST /labs/run'
+                  : 'Open a .py / .js lab under 02_labs/'
+              }
+            >
+              {running ? 'Running…' : 'Run'}
+            </button>
+          </div>
+
+          {runError ? (
+            <pre className="overflow-auto rounded border border-red-500/40 bg-[var(--bg)] p-3 text-xs text-red-400">
+              {runError}
+            </pre>
+          ) : null}
+
+          {result ? (
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
+              <p className="text-xs text-[var(--text-muted)]">
+                exit_code: {String(result.exit_code)}
+                {result.timed_out ? ' · timed out' : ''}
+              </p>
+              <div>
+                <div className="mb-1 text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                  stdout
+                </div>
+                <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded border border-[var(--border)] bg-[var(--bg)] p-3 text-xs">
+                  {result.stdout || '(empty)'}
+                </pre>
+              </div>
+              <div>
+                <div className="mb-1 text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                  stderr
+                </div>
+                <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded border border-[var(--border)] bg-[var(--bg)] p-3 text-xs">
+                  {result.stderr || '(empty)'}
+                </pre>
+              </div>
+            </div>
+          ) : (
+            <pre className="overflow-auto rounded border border-[var(--border)] bg-[var(--bg)] p-3 text-xs text-[var(--text-muted)]">
+              {canRun
+                ? 'Click Run to execute this lab via the loopback sidecar.'
+                : 'Select a .py or .js file under 02_labs/ to enable Run.'}
+            </pre>
+          )}
         </div>
       )}
     </aside>

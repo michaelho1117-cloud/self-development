@@ -61,6 +61,32 @@ export async function putFile(path: string, content: string): Promise<FilePayloa
   return jsonOrThrow(res)
 }
 
+export type LabRuntime = 'py' | 'node'
+
+export type LabRunResult = {
+  ok?: boolean
+  path: string
+  runtime: LabRuntime
+  timeout_sec?: number
+  stdout: string
+  stderr: string
+  exit_code: number | null
+  timed_out?: boolean
+  error?: string
+}
+
+export async function runLab(
+  path: string,
+  runtime: LabRuntime,
+): Promise<LabRunResult> {
+  const res = await fetch(`${SIDECAR_BASE}/labs/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, runtime }),
+  })
+  return jsonOrThrow(res)
+}
+
 export type ChatMessage = { role: string; content: string }
 
 export type TutorSseEvent = {
