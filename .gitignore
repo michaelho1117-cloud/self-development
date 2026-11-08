@@ -1,0 +1,15 @@
+# Python
+sidecar/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Node
+ui/node_modules/
+ui/dist/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
