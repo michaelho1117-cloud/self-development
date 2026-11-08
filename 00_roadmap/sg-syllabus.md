@@ -8,7 +8,7 @@ Status: seeded scaffold only. FE security basics should be comfortable before de
 - [ ] サプライチェーンと第三者リスクの基礎
 
 ## セキュア設計・開発
-- [ ] 脅威モデリング（資産, 脅威, 対策の対応づけ）
+- [x] 脅威モデリング（資産, 脅威, 対策の対応づけ）→ `01_concepts/sg-threat-modeling-basics.md` + `02_labs/sg-threat-modeling-basics/`
 - [ ] セキュアコーディングと代表的脆弱性（OWASP 系の理解）
 - [ ] 暗号利用の設計（用途選択, 鍵管理の原則 — 実装より判断）
 
